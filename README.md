@@ -1,13 +1,10 @@
-# 📦 Streamlit App Starter Kit 
-```
-⬆️ (Replace above with your app's name)
-```
+# Artificial Neural Network to Predict Slope Stability Considering Rainfall and Soil Strength Effect
 
-Description of the app ...
+This app builds and trains machine learning to predict rainfall induced landslide
 
 ## Demo App
 
-[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://app-starter-kit.streamlit.app/)
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://artificialneuralnetworkbyaa.streamlit.app/)
 
 ## GitHub Codespaces
 
