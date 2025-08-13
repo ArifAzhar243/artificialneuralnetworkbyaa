@@ -14,7 +14,7 @@ st.set_page_config(page_title="ANN Rainfall Landslide Prediction", layout="wide"
 
 # Title and description
 st.title("🤖 Artificial Neural Network to Predict Rainfall Induced Landslide")
-st.info("This app builds and trains an ANN model to predict Factor of Safety from rainfall and soil strength parameters. Created by Arif Azhar")
+st.info("This app builds and trains an ANN model to predict Factor of Safety from rainfall and soil strength parameters. Created by Arif Azhar.")
 
 # Step 1: Load Data
 with st.expander('Data'):
