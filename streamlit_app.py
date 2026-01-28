@@ -88,9 +88,6 @@ X_val, X_test, y_val, y_test = train_test_split(
     X_temp, y_temp, test_size=0.50, random_state=42
 )
 
-st.write(f"Training samples: {X_train.shape[0]}")
-st.write(f"Validation samples: {X_val.shape[0]}")
-st.write(f"Test samples: {X_test.shape[0]}")
 
 # ============================================
 # Step 5: Build ANN Model
