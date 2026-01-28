@@ -98,15 +98,36 @@ ax1.set_ylabel('Predicted Factor of Safety')
 ax1.set_title('Actual vs Predicted Factor of Safety')
 st.pyplot(fig1)
 
-
 # Step 7: User Input Prediction
 st.subheader("🔮 Predict Factor of Safety from New Parameters")
 
-friction_angle = st.number_input("Friction Angle (°)", min_value=0, max_value=90, value=30, step=1, format="%d")
-cohesion = st.number_input("Cohesion (kPa)", min_value=0, value=20, step=1, format="%d")
-slope_angle = st.number_input("Slope Angle (°)", min_value=0, max_value=90, value=25, step=1, format="%d")
-rainfall_intensity = st.number_input("Rainfall Intensity (mm/hr)", min_value=0, value=50, step=1, format="%d")
-rainfall_duration = st.number_input("Rainfall Duration (hours)", min_value=0, value=5, step=1, format="%d")
+friction_angle = st.number_input(
+    "Friction Angle (°)", min_value=0, max_value=90, value=30, step=1
+)
+
+cohesion = st.number_input(
+    "Cohesion (kPa)", min_value=0, value=20, step=1
+)
+
+slope_angle = st.number_input(
+    "Slope Angle (°)", min_value=0, max_value=90, value=25, step=1
+)
+
+rainfall_intensity = st.number_input(
+    "Rainfall Intensity (mm/hr)", min_value=0, value=50, step=1
+)
+
+rainfall_duration = st.number_input(
+    "Rainfall Duration (hours)", min_value=0, value=5, step=1
+)
+
+permeability = st.number_input(
+    "Permeability (m/s)",
+    min_value=0.0,
+    value=1e-5,
+    format="%.6e"
+)
+
 
 if st.button("Predict FOS"):
     try:
