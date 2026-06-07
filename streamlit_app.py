@@ -29,8 +29,9 @@ if 'monitoring_history' not in st.session_state:
 @st.cache_resource
 def init_and_train_ann():
     try:
-        # Load dataset asli
-        df = pd.read_excel("ML OBJ2.xlsx")
+        # KEMASKINI: Load dataset terus dari URL GitHub anda menggunakan read_csv
+        csv_url = "https://raw.githubusercontent.com/ArifAzhar243/artificialneuralnetworkbyaa/refs/heads/master/ML%20OBJ2.csv"
+        df = pd.read_csv(csv_url)
         df = df.drop(index=0, errors='ignore') 
         
         # Impute missing values
@@ -65,13 +66,13 @@ def init_and_train_ann():
         st.error(f"Ralat kritikal semasa latihan model ANN: {e}")
         return None, None, None
 
-with st.spinner("🤖 Sedang melatih model ANN di latar belakang... Sila tunggu sebentar."):
+with st.spinner("🤖 Sedang mengambil data dari GitHub & melatih model ANN... Sila tunggu sebentar."):
     model, scaler, feature_columns = init_and_train_ann()
 
 if model is not None:
     st.sidebar.success("✅ Model ANN & Scaler sedia untuk digunakan!")
 else:
-    st.error("❌ Gagal memuatkan sistem kecerdasan buatan. Sila semak fail 'ML OBJ2.xlsx' anda.")
+    st.error("❌ Gagal memuatkan sistem kecerdasan buatan. Sila semak sambungan internet anda atau pautan URL GitHub CSV tersebut.")
     st.stop()
 
 # ============================================
@@ -142,17 +143,11 @@ def send_telegram_alert(token, chat_id, fos, zone, intensity, duration, lat_lon)
 # ============================================
 # 📊 MAIN DASHBOARD INTERFACE
 # ============================================
-# Layout untuk status semasa pemantauan
 start_monitoring = st.toggle("▶️ Aktifkan Enjin Pemantauan Masa Nyata", value=False)
 
-# Placeholders dinamik supaya UI tidak berkelip (flicker) semasa refresh loop
 metric_container = st.empty()
 chart_container = st.empty()
 log_container = st.empty()
-
-# Aturan susunan lajur data mengikut keperluan model ANN asal anda
-# Urutan asal: 'Friction_Angle', 'Cohesion', 'Slope_Angle', 'Rainfall_Intensity', 'Rainfall_Duration', 'Permeability'
-# Sila pastikan urutan ini match 100% dengan susunan kolum dalam dataframe latihan (X.columns)
 
 # ============================================
 # 🔄 MONITORING LOOP RUNNER
@@ -206,7 +201,6 @@ while start_monitoring:
             "FOS": round(live_fos, 3), 
             "Rainfall (mm)": current_intensity_mm
         })
-        # Hadkan simpanan data graf setakat 20 rekod terakhir sahaja
         if len(st.session_state.monitoring_history) > 20:
             st.session_state.monitoring_history.pop(0)
             
@@ -214,7 +208,6 @@ while start_monitoring:
         with metric_container.container():
             st.markdown(f"### 📍 Lokasi Pantauan: `{lat_lon}` | Terakhir Diperbaharui: `{timestamp_now}`")
             
-            # Highlight Kotak Status Utama Menggunakan Warna Bootstrap Streamlit
             st.markdown(
                 f"<div style='background-color:{hex_color}; padding:20px; border-radius:10px; text-align:center; color:white; font-weight:bold; font-size:24px;'>"
                 f"STATUS: {zone_name.upper()} (FoS = {live_fos:.3f})"
@@ -249,7 +242,6 @@ while start_monitoring:
                 else:
                     st.toast(f"❌ Gagal menghantar isyarat Telegram. Sila periksa token/ID.", icon="🚨")
 
-        # Rehat mengikut sela masa yang ditetapkan oleh user
         time.sleep(sleep_seconds)
         st.rerun()
 
@@ -260,4 +252,4 @@ while start_monitoring:
 
 # Paparan jika pemantauan dimatikan (Off)
 if not start_monitoring:
-    st.info("ℹ️ Sila konfigurasikan parameter di bar sisi (sidebar) dan petik suis 'Aktifkan Enjin Pemantauan' untuk memulakan sistem.")
+    st.info("ℹ️ Sila konfigurasikan parameter di bar sisi (sidebar) dan petik suis 'Aktifkan Enjin Pemantauan Masa Nyata' untuk memulakan sistem.")
