@@ -21,7 +21,7 @@ st.set_page_config(
     layout="wide"
 )
 
-st.title("🤖 Artificial Neural Network to Predict Rainfall-Induced Landslide")
+st.title("🤖 Artificial Neural Network to Predict")
 st.info(
     "This app trains an ANN model to predict Factor of Safety (FOS) "
     "based on rainfall and soil parameters."
