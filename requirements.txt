@@ -6,3 +6,6 @@ seaborn
 scikit-learn
 tensorflow
 joblib
+plotly
+tensorflow-cpu
+requests
