@@ -107,8 +107,9 @@ st.sidebar.header("🧪 Simulation Mode (Testing)")
 simulation_mode = st.sidebar.toggle("Enable Simulation Mode", value=False)
 if simulation_mode:
     st.sidebar.warning("API bypassed. Using manual inputs below:")
-    sim_intensity = st.sidebar.slider("Simulated Rainfall (mm/hr)", 0.0, 150.0, 20.0, step=1.0)
-    sim_duration = st.sidebar.slider("Simulated Duration (Hrs)", 0.0, 48.0, 2.0, step=0.5)
+    sim_intensity = st.sidebar.slider("Simulated Rainfall (mm/hr)", 0.0, 300.0, 20.0, step=1.0)
+    # UPDATED: Changed from Days to Hours directly (Max 168 Hours = 7 Days)
+    sim_duration_hours = st.sidebar.slider("Simulated Duration (Hours)", 0.0, 168.0, 12.0, step=1.0)
 
 # ============================================
 # 🧮 HELPER FUNCTIONS (Classification & Alerts)
@@ -183,9 +184,9 @@ while start_monitoring:
                 st.session_state.current_duration_hrs = 0.0
                 
         else:
-            # 1. Bypass API and use manual simulation values (SIMULATION MODE)
+            # 1. Bypass API and pass manual simulation hours straight to the pipeline
             current_intensity_mm = float(sim_intensity)
-            st.session_state.current_duration_hrs = float(sim_duration)
+            st.session_state.current_duration_hrs = float(sim_duration_hours)
             
         # 2. Restructure Live/Simulated Data for the ANN Pipeline
         live_data = pd.DataFrame({
