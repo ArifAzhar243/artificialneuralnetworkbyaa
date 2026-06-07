@@ -17,7 +17,7 @@ from plotly.subplots import make_subplots
 # ============================================
 st.set_page_config(page_title="Slope FOS Real-Time Monitor", layout="wide", page_icon="⛰️")
 
-st.title("⛰️ Real-Time Slope Stability & FoS Monitoring System")
+st.title("⛰️ Real-Time Slope Monitoring & Early Warning System for Rainfall Induced Landslide")
 st.write("A real-time slope stability monitoring system leveraging Artificial Neural Networks (ANN) and integrated Telegram alerts.")
 
 # Initialize session state for tracking rainfall duration and history
