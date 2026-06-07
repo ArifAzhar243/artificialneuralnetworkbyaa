@@ -102,6 +102,14 @@ interval_value = st.sidebar.number_input("Interval Step Value", min_value=1, val
 # Convert monitoring interval to seconds for the processing loop sleep timer
 sleep_seconds = interval_value if "Seconds" in time_unit else interval_value * 3600
 
+st.sidebar.markdown("---")
+st.sidebar.header("🧪 Simulation Mode (Testing)")
+simulation_mode = st.sidebar.toggle("Enable Simulation Mode", value=False)
+if simulation_mode:
+    st.sidebar.warning("API bypassed. Using manual inputs below:")
+    sim_intensity = st.sidebar.slider("Simulated Rainfall (mm/hr)", 0.0, 150.0, 20.0, step=1.0)
+    sim_duration = st.sidebar.slider("Simulated Duration (Hrs)", 0.0, 48.0, 2.0, step=0.5)
+
 # ============================================
 # 🧮 HELPER FUNCTIONS (Classification & Alerts)
 # ============================================
@@ -154,26 +162,32 @@ log_container = st.empty()
 # ============================================
 while start_monitoring:
     try:
-        # 1. Fetch data from WeatherAPI
-        weather_url = f"http://api.weatherapi.com/v1/current.json?key={api_key}&q={lat_lon}"
-        response = requests.get(weather_url, timeout=10).json()
-        
-        if 'current' not in response:
-            with log_container:
-                st.error(f"❌ WeatherAPI Error: {response.get('error', {}).get('message', 'Connection issue or invalid API key')}")
-            time.sleep(5)
-            continue
+        if not simulation_mode:
+            # 1. Fetch data from WeatherAPI (LIVE MODE)
+            weather_url = f"http://api.weatherapi.com/v1/current.json?key={api_key}&q={lat_lon}"
+            response = requests.get(weather_url, timeout=10).json()
             
-        current_intensity_mm = response['current']['precip_mm']
-        
-        # 2. Update Rainfall Duration (scaled proportionally to hours)
-        if current_intensity_mm > 0.0:
-            added_hours = (interval_value / 3600.0) if "Seconds" in time_unit else float(interval_value)
-            st.session_state.current_duration_hrs += added_hours
+            if 'current' not in response:
+                with log_container:
+                    st.error(f"❌ WeatherAPI Error: {response.get('error', {}).get('message', 'Connection issue or invalid API key')}")
+                time.sleep(5)
+                continue
+                
+            current_intensity_mm = response['current']['precip_mm']
+            
+            # Update Rainfall Duration dynamically
+            if current_intensity_mm > 0.0:
+                added_hours = (interval_value / 3600.0) if "Seconds" in time_unit else float(interval_value)
+                st.session_state.current_duration_hrs += added_hours
+            else:
+                st.session_state.current_duration_hrs = 0.0
+                
         else:
-            st.session_state.current_duration_hrs = 0.0
+            # 1. Bypass API and use manual simulation values (SIMULATION MODE)
+            current_intensity_mm = float(sim_intensity)
+            st.session_state.current_duration_hrs = float(sim_duration)
             
-        # 3. Restructure Live Data for the ANN Pipeline
+        # 2. Restructure Live/Simulated Data for the ANN Pipeline
         live_data = pd.DataFrame({
             'Friction_Angle': [slope_friction],
             'Cohesion': [slope_cohesion],
@@ -186,12 +200,12 @@ while start_monitoring:
         # Align columns explicitly with the structural layout the model was trained on
         live_data = live_data[feature_columns]
         
-        # 4. Scale and Predict via ANN Model
+        # 3. Scale and Predict via ANN Model
         live_data_scaled = scaler.transform(live_data)
         predicted_fos_raw = model.predict(live_data_scaled, verbose=0)
         live_fos = float(predicted_fos_raw[0][0])
         
-        # 5. Extract Zone Metrics and Classification Colors
+        # 4. Extract Zone Metrics and Classification Colors
         zone_name, bootstrap_color, hex_color = get_fos_classification(live_fos)
         
         # Log entry to chart telemetry history
@@ -204,9 +218,10 @@ while start_monitoring:
         if len(st.session_state.monitoring_history) > 20:
             st.session_state.monitoring_history.pop(0)
             
-        # 6. Render Dashboard Display Layout Elements
+        # 5. Render Dashboard Display Layout Elements
         with metric_container.container():
-            st.markdown(f"### 📍 Monitored Location: `{lat_lon}` | Last Updated: `{timestamp_now}`")
+            mode_badge = "🧪 SIMULATION MODE ACTIVE" if simulation_mode else "🌍 LIVE API MODE"
+            st.markdown(f"### 📍 Monitored Location: `{lat_lon}` | Last Updated: `{timestamp_now}` | {mode_badge}")
             
             # CSS Injection to dynamically handle live alert banner status colors
             st.markdown(
@@ -223,7 +238,7 @@ while start_monitoring:
             col3.metric(label="Accumulated Rain Duration", value=f"{st.session_state.current_duration_hrs:.2f} Hrs")
             col4.metric(label="Monitoring Step Rate", value=f"{interval_value} {time_unit}")
             
-        # 7. Chart Rendering 
+        # 6. Chart Rendering 
         with chart_container.container():
             st.markdown("---")
             st.subheader("📈 Live Slope Stability Trend Logs")
@@ -231,7 +246,7 @@ while start_monitoring:
             if not history_df.empty:
                 st.line_chart(history_df.set_index("Time")[["FOS", "Rainfall (mm)"]])
                 
-        # 8. Trigger Telegram Alert Dispatch System (For Non-Safe Conditions)
+        # 7. Trigger Telegram Alert Dispatch System (For Non-Safe Conditions)
         if zone_name != "Safe Zone" and telegram_token and telegram_chat_id:
             alert_success = send_telegram_alert(
                 telegram_token, telegram_chat_id, live_fos, 
