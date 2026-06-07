@@ -8,6 +8,9 @@ from sklearn.impute import SimpleImputer
 from sklearn.model_selection import train_test_split
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Input
+# Added Plotly imports for advanced dual-axis plotting
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 
 # ============================================
 # 🖥️ STREAMLIT CONFIG & PAGE INITIALIZATION
@@ -108,7 +111,6 @@ simulation_mode = st.sidebar.toggle("Enable Simulation Mode", value=False)
 if simulation_mode:
     st.sidebar.warning("API bypassed. Using manual inputs below:")
     sim_intensity = st.sidebar.slider("Simulated Rainfall (mm/hr)", 0.0, 300.0, 20.0, step=1.0)
-    # UPDATED: Changed from Days to Hours directly (Max 168 Hours = 7 Days)
     sim_duration_hours = st.sidebar.slider("Simulated Duration (Hours)", 0.0, 168.0, 12.0, step=1.0)
 
 # ============================================
@@ -209,14 +211,14 @@ while start_monitoring:
         # 4. Extract Zone Metrics and Classification Colors
         zone_name, bootstrap_color, hex_color = get_fos_classification(live_fos)
         
-        # Log entry to chart telemetry history
-        timestamp_now = time.strftime('%H:%M:%S')
+        # UPDATED: Logs combined Date & Time now
+        timestamp_now = time.strftime('%Y-%m-%d %H:%M:%S')
         st.session_state.monitoring_history.append({
-            "Time": timestamp_now, 
+            "DateTime": timestamp_now, 
             "FOS": round(live_fos, 3), 
-            "Rainfall (mm)": current_intensity_mm
+            "Rainfall (mm/hr)": current_intensity_mm
         })
-        if len(st.session_state.monitoring_history) > 20:
+        if len(st.session_state.monitoring_history) > 30:
             st.session_state.monitoring_history.pop(0)
             
         # 5. Render Dashboard Display Layout Elements
@@ -239,13 +241,57 @@ while start_monitoring:
             col3.metric(label="Accumulated Rain Duration", value=f"{st.session_state.current_duration_hrs:.2f} Hrs")
             col4.metric(label="Monitoring Step Rate", value=f"{interval_value} {time_unit}")
             
-        # 6. Chart Rendering 
+        # ============================================
+        # 📊 6. UPDATED: ADVANCED DUAL Y-AXIS CHART
+        # ============================================
         with chart_container.container():
             st.markdown("---")
-            st.subheader("📈 Live Slope Stability Trend Logs")
+            st.subheader("📈 Live Slope Stability & Weather Telemetry Trend Logs")
+            
             history_df = pd.DataFrame(st.session_state.monitoring_history)
+            
             if not history_df.empty:
-                st.line_chart(history_df.set_index("Time")[["FOS", "Rainfall (mm)"]])
+                # Create a figure canvas with a secondary y-axis
+                fig = make_subplots(specs=[[{"secondary_y": True}]])
+                
+                # Trace 1: Factor of Safety (Primary Left Y-Axis)
+                fig.add_trace(
+                    go.Scatter(
+                        x=history_df['DateTime'], 
+                        y=history_df['FOS'], 
+                        name="Factor of Safety (FoS)", 
+                        mode='lines+markers',
+                        line=dict(color='#dc3545' if live_fos < 1.15 else '#28a745', width=3)
+                    ),
+                    secondary_y=False,
+                )
+                
+                # Trace 2: Rainfall Intensity (Secondary Right Y-Axis)
+                fig.add_trace(
+                    go.Scatter(
+                        x=history_df['DateTime'], 
+                        y=history_df['Rainfall (mm/hr)'], 
+                        name="Rainfall Intensity (mm/hr)", 
+                        mode='lines+markers',
+                        line=dict(color='#007bff', width=2, dash='dot')
+                    ),
+                    secondary_y=True,
+                )
+                
+                # Set explicit labels for all axes
+                fig.update_xaxes(title_text="<b>Date & Time of Data Taken</b>")
+                fig.update_yaxes(title_text="<b>Factor of Safety (FoS)</b>", secondary_y=False)
+                fig.update_yaxes(title_text="<b>Rainfall Intensity (mm/hr)</b>", secondary_y=True)
+                
+                # Layout formatting configurations
+                fig.update_layout(
+                    hovermode="x unified",
+                    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+                    margin=dict(l=20, r=20, t=50, b=20),
+                    height=450
+                )
+                
+                st.plotly_chart(fig, use_container_width=True)
                 
         # 7. Trigger Telegram Alert Dispatch System (For Non-Safe Conditions)
         if zone_name != "Safe Zone" and telegram_token and telegram_chat_id:
